@@ -6,8 +6,7 @@
 <header th:replace="fragments/header :: header"></header>
 
 <main class="container mt-5">
-    <!-- Título dinámico que lee de properties según si es nueva o editada -->
-    <h1 th:text="${region.id == null} ? #{region.form.title.add} : #{region.form.title.edit}"></h1>
+    <h1 th:text="${region.id == null} ? #{msg.region-form.add} : #{msg.region-form.edit}"></h1>
 
     <!-- Muestra un mensaje de error si hay algún problema -->
     <div th:if="${errorMessage}" class="alert alert-danger">
@@ -19,26 +18,22 @@
         <input type="hidden" th:field="*{id}" />
 
         <div class="mb-3">
-            <label for="code" class="form-label" th:text="#{region.form.label.code}">Code:</label>
+            <label for="code" class="form-label" th:text="#{msg.region-form.code}"></label>
             <input type="text" th:field="*{code}" id="code" class="form-control" />
-            <div th:if="${#fields.hasErrors('code')}" class="text-danger"
-                 th:errors="*{code}"></div>
+            <div th:if="${#fields.hasErrors('code')}" class="text-danger" th:errors="*{code}"></div>
         </div>
 
         <div class="mb-3">
-            <label for="name" class="form-label" th:text="#{region.form.label.name}">Name:</label>
+            <label for="name" class="form-label" th:text="#{msg.region-form.name}"></label>
             <input type="text" th:field="*{name}" id="name" class="form-control" />
-            <div th:if="${#fields.hasErrors('name')}" class="text-danger"
-                 th:errors="*{name}"></div>
+            <div th:if="${#fields.hasErrors('name')}" class="text-danger" th:errors="*{name}"></div>
         </div>
 
-        <!-- Botón dinámico que lee de properties -->
-        <button type="submit" class="btn btn-primary"
-                th:text="${region.id == null} ? #{region.form.button.create} : #{region.form.button.update}"></button>
+        <button type="submit" class="btn btn-primary" th:text="${region.id == null} ? #{msg.region-form.create} : #{msg.region-form.update}"></button>
     </form>
 
     <!-- Volver a la lista de regiones -->
-    <a href="#" th:href="@{/regions}" class="btn btn-secondary mt-3" th:text="#{region.form.backList}">Back to List</a>
+    <a href="#" th:href="@{/regions}" class="btn btn-secondary mt-3" th:text="#{msg.region-form.returnback}"></a>
 </main>
 
 <!-- Incluir el fragmento del footer -->

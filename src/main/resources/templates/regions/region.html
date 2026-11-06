@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="fragments/head :: head ('Ticket Logger - Listado de Comunidades Autónomas')"></head>
+<head th:replace="~{fragments/head :: head('Ticket Logger - Listado de Comunidades Autónomas')}"></head>
 <body>
+
 <!-- Incluir el fragmento del header -->
-<header th:replace="fragments/header :: header"></header>
+<header th:replace="~{fragments/header :: header}"></header>
 
 <main class="container mt-5">
-    <h1 th:text="#{region.title}">Regions</h1>
+    <h1 th:text="#{msg.region.title}"></h1>
 
     <!-- Muestra un mensaje de error si hay algún problema -->
     <div th:if="${errorMessage}" class="alert alert-danger">
@@ -17,10 +18,10 @@
     <table class="table table-bordered mt-3">
         <thead>
         <tr>
-            <th th:text="#{region.id}">ID</th>
-            <th th:text="#{region.code}">Code</th>
-            <th th:text="#{region.name}">Name</th>
-            <th th:text="#{region.actions}">Actions</th>
+            <th th:text="#{msg.region.id}"></th>
+            <th th:text="#{msg.region.code}"></th>
+            <th th:text="#{msg.region.name}"></th>
+            <th th:text="#{msg.region.actions}"></th>
         </tr>
         </thead>
         <tbody>
@@ -30,16 +31,15 @@
             <td th:text="${region.name}"></td>
             <td>
                 <!-- Botón para editar -->
-                <a th:href="@{/regions/edit(id=${region.id})}" class="btn btn-primary btn-sm" th:text="#{region.edit}">Edit</a>
-
+                <a th:href="@{/regions/edit(id=${region.id})}" class="btn btn-primary btn-sm" th:text="#{msg.region.edit}"></a>
                 <!-- Botón para eliminar -->
                 <form th:action="@{/regions/delete}" method="post" class="d-inline">
                     <input type="hidden" name="id" th:value="${region.id}"/>
-                    <!-- Para el alert de JS concatenamos el mensaje con barras verticales | | -->
+                    <!-- El texto traducido va en data-confirm: Thymeleaf no deja meter mensajes dentro de onclick -->
                     <button type="submit" class="btn btn-danger btn-sm"
-                            th:onclick="|return confirm('#{region.delete.confirm}');|" th:text="#{region.delete}">
-                        Delete
-                    </button>
+                            th:attr="data-confirm=#{msg.region.confirm}"
+                            onclick="return confirm(this.dataset.confirm);"
+                            th:text="#{msg.region.delete}"></button>
                 </form>
             </td>
         </tr>
@@ -47,12 +47,13 @@
     </table>
 
     <!-- Botón para añadir una nueva región -->
-    <a th:href="@{/regions/new}" class="btn btn-success mt-3" th:text="#{region.add}">Add New Region</a>
+    <a th:href="@{/regions/new}" class="btn btn-success mt-3" th:text="#{msg.region.add}"></a>
     <!-- Volver a la página principal -->
-    <a href="#" th:href="@{/}" class="btn btn-secondary mt-3" th:text="#{region.backHome}">Back to Home</a>
+    <a href="#" th:href="@{/}" class="btn btn-secondary mt-3" th:text="#{msg.back}"></a>
 </main>
 
 <!-- Incluir el fragmento del footer -->
-<footer th:replace="fragments/footer :: footer"></footer>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
 </body>
 </html>
