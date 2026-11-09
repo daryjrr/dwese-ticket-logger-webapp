@@ -1,10 +1,10 @@
 package org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.controllers;
 
 import jakarta.validation.Valid;
-import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.dao.ProvinceDAO;
-import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.dao.RegionDAO;
 import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.entities.Province;
 import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.entities.Region;
+import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.repositories.ProvinceRepository;
+import org.alixar.daw2.dario.dwese_ticket_logger_webapp.dwese_ticket_logger_webapp.repositories.RegionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -17,23 +17,23 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/provinces")
 public class ProvinceController {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(ProvinceController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProvinceController.class);
 
-    private final ProvinceDAO provinceDAO;
-    private final RegionDAO regionDAO;
+    private final ProvinceRepository provinceRepository;
+    private final RegionRepository regionRepository;
     private final MessageSource messageSource;
 
-    public ProvinceController(ProvinceDAO provinceDAO,
-                              RegionDAO regionDAO,
+    public ProvinceController(ProvinceRepository provinceRepository,
+                              RegionRepository regionRepository,
                               MessageSource messageSource) {
-        this.provinceDAO = provinceDAO;
-        this.regionDAO = regionDAO;
+        this.provinceRepository = provinceRepository;
+        this.regionRepository = regionRepository;
         this.messageSource = messageSource;
     }
 
@@ -42,18 +42,14 @@ public class ProvinceController {
      */
     @GetMapping
     public String listProvinces(Model model, Locale locale) {
-
         logger.info("Solicitando la lista de todas las provincias...");
-
         List<Province> listProvinces = null;
 
         try {
-            listProvinces = provinceDAO.listAllProvinces();
+            listProvinces = provinceRepository.findAll();
             logger.info("Se han cargado {} provincias.", listProvinces.size());
-
         } catch (DataAccessException e) {
             logger.error("Error al listar las provincias: {}", e.getMessage());
-
             model.addAttribute("errorMessage",
                     messageSource.getMessage(
                             "msg.province-controller.list.error",
@@ -63,7 +59,6 @@ public class ProvinceController {
         }
 
         model.addAttribute("listProvinces", listProvinces);
-
         return "provinces/province";
     }
 
@@ -81,7 +76,6 @@ public class ProvinceController {
         province.setRegion(new Region());
 
         model.addAttribute("province", province);
-
         return loadRegionsAndShowForm(model, redirectAttributes, locale);
     }
 
@@ -89,7 +83,7 @@ public class ProvinceController {
      * Muestra el formulario para editar una provincia.
      */
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") int id,
+    public String showEditForm(@RequestParam("id") Long id,
                                Model model,
                                RedirectAttributes redirectAttributes,
                                Locale locale) {
@@ -97,12 +91,10 @@ public class ProvinceController {
         logger.info("Mostrando formulario de edición para la provincia con ID {}", id);
 
         try {
-            Province province = provinceDAO.getProvinceById(id);
+            Optional<Province> provinceOpt = provinceRepository.findById(id);
 
-            if (province == null) {
-
+            if (provinceOpt.isEmpty()) {
                 logger.warn("No se encontró la provincia con ID {}", id);
-
                 redirectAttributes.addFlashAttribute(
                         "errorMessage",
                         messageSource.getMessage(
@@ -111,16 +103,13 @@ public class ProvinceController {
                                 locale
                         )
                 );
-
                 return "redirect:/provinces";
             }
 
-            model.addAttribute("province", province);
+            model.addAttribute("province", provinceOpt.get());
 
         } catch (DataAccessException e) {
-
             logger.error("Error al obtener la provincia con ID {}: {}", id, e.getMessage());
-
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     messageSource.getMessage(
@@ -129,7 +118,6 @@ public class ProvinceController {
                             locale
                     )
             );
-
             return "redirect:/provinces";
         }
 
@@ -150,34 +138,26 @@ public class ProvinceController {
         logger.info("Insertando nueva provincia con código {}", province.getCode());
 
         try {
-
             checkRegionSelected(province, result);
 
             if (result.hasErrors()) {
                 return loadRegionsAndShowForm(model, redirectAttributes, locale);
             }
 
-            if (provinceDAO.existsProvinceByCode(province.getCode())) {
-
+            if (provinceRepository.existsProvinceByCode(province.getCode())) {
                 logger.warn("El código de la provincia {} ya existe.", province.getCode());
-
                 result.rejectValue(
                         "code",
                         "msg.province-controller.insert.codeExist"
                 );
-
                 return loadRegionsAndShowForm(model, redirectAttributes, locale);
             }
 
-            provinceDAO.insertProvince(province);
-
+            provinceRepository.save(province);
             logger.info("Provincia {} insertada con éxito.", province.getCode());
 
         } catch (DataAccessException e) {
-
-            logger.error("Error al insertar la provincia {}: {}",
-                    province.getCode(), e.getMessage());
-
+            logger.error("Error al insertar la provincia {}: {}", province.getCode(), e.getMessage());
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     messageSource.getMessage(
@@ -205,38 +185,31 @@ public class ProvinceController {
         logger.info("Actualizando provincia con ID {}", province.getId());
 
         try {
-
             checkRegionSelected(province, result);
 
             if (result.hasErrors()) {
                 return loadRegionsAndShowForm(model, redirectAttributes, locale);
             }
 
-            if (provinceDAO.existsProvinceByCodeAndNotId(
+            if (provinceRepository.existsProvinceByCodeAndNotId(
                     province.getCode(), province.getId())) {
 
                 logger.warn(
                         "El código de la provincia {} ya existe para otra provincia.",
                         province.getCode()
                 );
-
                 result.rejectValue(
                         "code",
                         "msg.province-controller.update.codeExist"
                 );
-
                 return loadRegionsAndShowForm(model, redirectAttributes, locale);
             }
 
-            provinceDAO.updateProvince(province);
-
+            provinceRepository.save(province);
             logger.info("Provincia con ID {} actualizada con éxito.", province.getId());
 
         } catch (DataAccessException e) {
-
-            logger.error("Error al actualizar la provincia con ID {}: {}",
-                    province.getId(), e.getMessage());
-
+            logger.error("Error al actualizar la provincia con ID {}: {}", province.getId(), e.getMessage());
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     messageSource.getMessage(
@@ -255,23 +228,17 @@ public class ProvinceController {
      */
     @PostMapping("/delete")
     public String deleteProvince(
-            @RequestParam("id") int id,
+            @RequestParam("id") Long id,
             RedirectAttributes redirectAttributes,
             Locale locale) {
 
         logger.info("Eliminando provincia con ID {}", id);
 
         try {
-
-            provinceDAO.deleteProvince(id);
-
+            provinceRepository.deleteById(id);
             logger.info("Provincia con ID {} eliminada con éxito.", id);
-
         } catch (DataAccessException e) {
-
-            logger.error("Error al eliminar la provincia con ID {}: {}",
-                    id, e.getMessage());
-
+            logger.error("Error al eliminar la provincia con ID {}: {}", id, e.getMessage());
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     messageSource.getMessage(
@@ -289,10 +256,7 @@ public class ProvinceController {
      * Comprueba que se haya seleccionado una región.
      */
     private void checkRegionSelected(Province province, BindingResult result) {
-
-        if (province.getRegion() == null ||
-                province.getRegion().getId() == null) {
-
+        if (province.getRegion() == null || province.getRegion().getId() == null) {
             result.rejectValue(
                     "region.id",
                     "msg.province.region.notNull"
@@ -309,16 +273,10 @@ public class ProvinceController {
             Locale locale) {
 
         try {
-
-            model.addAttribute("listRegions", regionDAO.listAllRegions());
-
+            model.addAttribute("listRegions", regionRepository.findAll());
             return "provinces/province-form";
-
         } catch (DataAccessException e) {
-
-            logger.error("Error al cargar las regiones para el formulario: {}",
-                    e.getMessage());
-
+            logger.error("Error al cargar las regiones para el formulario: {}", e.getMessage());
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     messageSource.getMessage(
@@ -327,7 +285,6 @@ public class ProvinceController {
                             locale
                     )
             );
-
             return "redirect:/provinces";
         }
     }

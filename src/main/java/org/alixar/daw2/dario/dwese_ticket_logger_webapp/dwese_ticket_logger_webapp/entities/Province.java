@@ -22,7 +22,7 @@ public class Province {
     // Campo que almacena el identificador único de la provincia.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     // Campo que almacena el código de la provincia.
     @NotEmpty(message = "{msg.province.code.notEmpty}")
